@@ -1,21 +1,118 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Search as SearchIcon, MapPin, TrendingUp } from 'lucide-react';
+import { Search as SearchIcon, MapPin, TrendingUp, ShoppingCart } from 'lucide-react';
 import SearchOptionCard from '@/components/SearchOptionCard';
 import DestinationCard from '@/components/DestinationCard';
 import BottomNav from '@/components/BottomNav';
+import DestinationSearch from '@/components/trip/DestinationSearch';
+import PlanningQuestions from '@/components/trip/PlanningQuestions';
+import SnakeItinerary from '@/components/trip/SnakeItinerary';
+import CartView from '@/components/trip/CartView';
+import MapView from '@/components/trip/MapView';
 import { mockDestinations } from '@/data/mockData';
+import { useTripPlanning } from '@/context/TripPlanningContext';
+import { useCart } from '@/context/CartContext';
 
 const SearchPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [showDestinationSearch, setShowDestinationSearch] = useState(false);
+  const { step, goToStep, setPlanType, resetPlanning } = useTripPlanning();
+  const { cartItems } = useCart();
 
   const trendingSearches = ['Bali', 'Santorini', 'Tokyo', 'Maldives', 'Swiss Alps'];
+
+  const handleCardClick = (type: 'seasonal' | 'package' | 'custom') => {
+    setPlanType(type);
+    setShowDestinationSearch(true);
+  };
+
+  const handleBackToSearch = () => {
+    setShowDestinationSearch(false);
+    resetPlanning();
+  };
+
+  // Render based on current step
+  if (showDestinationSearch && step === 'search') {
+    return (
+      <div className="min-h-screen bg-background pb-24">
+        <main className="px-4 pt-6">
+          <DestinationSearch onBack={handleBackToSearch} />
+        </main>
+        <BottomNav />
+      </div>
+    );
+  }
+
+  if (step === 'questions') {
+    return (
+      <div className="min-h-screen bg-background pb-24">
+        <main className="px-4 pt-6">
+          <PlanningQuestions onBack={() => goToStep('search')} />
+        </main>
+        <BottomNav />
+      </div>
+    );
+  }
+
+  if (step === 'itinerary') {
+    return (
+      <div className="min-h-screen bg-background pb-24">
+        <main className="px-4 pt-6">
+          <SnakeItinerary 
+            onBack={() => goToStep('questions')} 
+            onOpenCart={() => goToStep('cart')}
+          />
+        </main>
+        <BottomNav />
+      </div>
+    );
+  }
+
+  if (step === 'cart') {
+    return (
+      <div className="min-h-screen bg-background pb-24">
+        <main className="px-4 pt-6">
+          <CartView 
+            onBack={() => goToStep('itinerary')} 
+            onOpenMap={() => goToStep('map')}
+          />
+        </main>
+        <BottomNav />
+      </div>
+    );
+  }
+
+  if (step === 'map') {
+    return (
+      <div className="min-h-screen bg-background pb-24">
+        <main className="px-4 pt-6">
+          <MapView onBack={() => goToStep('cart')} />
+        </main>
+        <BottomNav />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
       <header className="px-4 pt-6 pb-4">
-        <h1 className="text-2xl font-bold text-foreground mb-4">Discover</h1>
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-2xl font-bold text-foreground">Discover</h1>
+          {cartItems.length > 0 && (
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => goToStep('cart')}
+              className="relative h-10 w-10 rounded-full bg-primary flex items-center justify-center"
+            >
+              <ShoppingCart className="h-5 w-5 text-primary-foreground" />
+              <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground text-xs font-bold flex items-center justify-center">
+                {cartItems.length}
+              </span>
+            </motion.button>
+          )}
+        </div>
         
         {/* Search Bar */}
         <div className="relative">
@@ -51,9 +148,15 @@ const SearchPage = () => {
         <section className="space-y-3">
           <h2 className="text-lg font-semibold text-foreground">Start Planning</h2>
           <div className="space-y-3">
-            <SearchOptionCard type="seasonal" />
-            <SearchOptionCard type="package" />
-            <SearchOptionCard type="custom" />
+            <div onClick={() => handleCardClick('seasonal')}>
+              <SearchOptionCard type="seasonal" />
+            </div>
+            <div onClick={() => handleCardClick('package')}>
+              <SearchOptionCard type="package" />
+            </div>
+            <div onClick={() => handleCardClick('custom')}>
+              <SearchOptionCard type="custom" />
+            </div>
           </div>
         </section>
 
